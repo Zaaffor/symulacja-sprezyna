@@ -1,0 +1,1 @@
+# symulacja-sprezyna
