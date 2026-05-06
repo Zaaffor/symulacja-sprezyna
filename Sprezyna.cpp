@@ -16,7 +16,8 @@ extern "C" {
 enum SimState {
     MENU,
     SIMULATION,
-    SETTINGS
+    SETTINGS,
+    DUAL
 };
 
 using namespace std;
@@ -47,6 +48,24 @@ int main() {
     float sim_Time = 0.0f;
     float accumulator = 0.0f;
 
+    const float k_ref = 500.0f;
+    const float m_ref = 5.0f;
+    const float c_ref = 0.5f;
+    auto modelRef = SimModel(k_ref, m_ref, c_ref, Consts::screenHeight / 2.0f);
+
+    float k_user = 500.0f;
+    float m_user = 5.0f;
+    float c_user = 0.5f;
+    float offset_user = 40.0f;          
+    auto modelUser = SimModel(k_user, m_user, c_user, Consts::screenHeight / 2.0f);
+
+    float start_amp_ref = Consts::screenHeight / 2.0f - 40.0f;      
+    float start_amp_user = Consts::screenHeight / 2.0f - offset_user;
+    modelRef.reset(start_amp_ref);
+    modelUser.reset(start_amp_user);
+
+    float dual_accumulator = 0.0f;
+
     while (!WindowShouldClose()) {
         if (current == MENU) {
             BeginDrawing();
@@ -69,6 +88,19 @@ int main() {
                 current = SIMULATION;
                 SetWindowTitle("Sprezynka - symulacja");
             }
+            Rectangle dualBtn = { Consts::screenWidth / 2.0f - 100, 400, 200, 50 };
+            if (GuiButton(dualBtn, "Symulacja podwojna")) {
+                
+                modelRef = SimModel(k_ref, m_ref, c_ref, Consts::screenHeight / 2.0f);
+                modelUser = SimModel(k_user, m_user, c_user, Consts::screenHeight / 2.0f);
+                start_amp_ref = Consts::screenHeight / 2.0f - 40.0f;
+                start_amp_user = Consts::screenHeight / 2.0f - offset_user;
+                modelRef.reset(start_amp_ref);
+                modelUser.reset(start_amp_user);
+                dual_accumulator = 0.0f;
+                current = DUAL;
+                SetWindowTitle("Sprezynka - symulacja podwojna");
+            }
             Rectangle settBtn = { Consts::screenWidth / 2.0f - 100, 350, 200, 50 };
             if (GuiButton(settBtn, "Ustawienia")) {
                 current = SETTINGS;
@@ -84,22 +116,22 @@ int main() {
             GuiLabel(Rectangle{ 150, 120, 200, 20 }, "Stala sprezystosci k [N/m]");
             GuiSlider(Rectangle{ 150, 150, 300, 20 }, TextFormat("%.1f", k_min), TextFormat("%.1f", k_max),
                 &start_k, k_min, k_max);
-            DrawText(TextFormat("%.1f", start_k), 460, 145, 20, DARKGRAY);
+            DrawText(TextFormat("%.1f", start_k), 480, 145, 20, DARKGRAY);
 
             GuiLabel(Rectangle{ 150, 180, 200, 20 }, "Masa m [kg]");
             GuiSlider(Rectangle{ 150, 210, 300, 20 }, TextFormat("%.2f", m_min), TextFormat("%.2f", m_max),
                 &start_m, m_min, m_max);
-            DrawText(TextFormat("%.2f", start_m), 460, 205, 20, DARKGRAY);
+            DrawText(TextFormat("%.2f", start_m), 480, 205, 20, DARKGRAY);
 
             GuiLabel(Rectangle{ 150, 240, 200, 20 }, "Tlumienie c [Ns/m]");
             GuiSlider(Rectangle{ 150, 270, 300, 20 }, TextFormat("%.2f", c_min), TextFormat("%.2f", c_max),
                 &start_c, c_min, c_max);
-            DrawText(TextFormat("%.2f", start_c), 460, 265, 20, DARKGRAY);
+            DrawText(TextFormat("%.2f", start_c), 480, 265, 20, DARKGRAY);
 
             GuiLabel(Rectangle{ 150, 300, 250, 20 }, "Poczatkowe wychylenie [px]");
             GuiSlider(Rectangle{ 150, 330, 300, 20 }, TextFormat("%.1f", off_min), TextFormat("%.1f", off_max),
                 &start_offset, off_min, off_max);
-            DrawText(TextFormat("%.1f", start_offset), 460, 325, 20, DARKGRAY);
+            DrawText(TextFormat("%.1f", start_offset), 480, 325, 20, DARKGRAY);
 
             Rectangle backBtn = { Consts::screenWidth / 2.0f - 100, 450, 200, 50 };
             if (GuiButton(backBtn, "Powrot do menu")) {
@@ -149,6 +181,64 @@ int main() {
             float plot_Y = center_Y - Consts::plotHeight / 2.0f;
             Renderer::drawScatterPlot(disp, 0, static_cast<int>(plot_Y), Consts::plotWidth,
                 Consts::plotHeight, center_Y, 4, DARKBLUE);
+
+            EndDrawing();
+        }
+        else if (current == DUAL) {
+            float frame_t = GetFrameTime();
+            dual_accumulator += frame_t;
+
+            while (dual_accumulator >= Consts::DT) {
+                modelRef.update(Consts::DT);
+                modelUser.setDamping(c_user);
+                modelUser.setMass(m_user);
+                modelUser.setSpringConstant(k_user);
+                modelUser.update(Consts::DT);
+                dual_accumulator -= Consts::DT;
+            }
+
+            BeginDrawing();
+            ClearBackground(GRAY);
+
+            DrawRectangle(380, 0, 400, 150, LIGHTGRAY);
+            GuiLabel(Rectangle{ 420, 10, 200, 20 }, "Parametry modelu uzytkownika");
+
+            GuiLabel(Rectangle{ 420, 35, 150, 20 }, "k [N/m]");
+            GuiSlider(Rectangle{ 420, 55, 300, 10 }, TextFormat("%.1f", k_min), TextFormat("%.1f", k_max),
+                &k_user, k_min, k_max);
+            //DrawText(TextFormat("%.1f", k_user), 730, 50, 20, DARKGRAY);
+
+            GuiLabel(Rectangle{ 420, 65, 150, 20 }, "m [kg]");
+            GuiSlider(Rectangle{ 420, 85, 300, 10 }, TextFormat("%.2f", m_min), TextFormat("%.2f", m_max),
+                &m_user, m_min, m_max);
+            //DrawText(TextFormat("%.2f", m_user), 730, 85, 20, DARKGRAY);
+
+            GuiLabel(Rectangle{ 420, 100, 150, 20 }, "c [Ns/m]");
+            GuiSlider(Rectangle{ 420, 125, 300, 10 }, TextFormat("%.2f", c_min), TextFormat("%.2f", c_max),
+                &c_user, c_min, c_max);
+            //DrawText(TextFormat("%.2f", c_user), 730, 125, 20, DARKGRAY);
+
+            Rectangle menuBtnDual = { Consts::screenWidth - 120, 20, 100, 30 };
+            if (GuiButton(menuBtnDual, "Menu")) {
+                current = MENU;
+            }
+
+            float ampRef = modelRef.getAmplitude();
+            float x0Ref = Consts::screenWidth / 4.0f - Consts::recWidth / 2.0f;
+            float springXRef = x0Ref + Consts::recWidth / 2.0f;
+            Renderer::drawSpring(springXRef, Consts::p_spring, ampRef, 8.0f);
+            Renderer::drawBox(x0Ref, ampRef, Consts::recWidth, Consts::recHeight, SKYBLUE);
+            DrawText("Model referencyjny", (int)x0Ref, 150, 16, DARKBLUE);
+
+            float ampUser = modelUser.getAmplitude();
+            float x0User = 3 * Consts::screenWidth / 4.0f - Consts::recWidth / 2.0f;
+            float springXUser = x0User + Consts::recWidth / 2.0f;
+            Renderer::drawSpring(springXUser, Consts::p_spring, ampUser, 8.0f);
+            Renderer::drawBox(x0User, ampUser, Consts::recWidth, Consts::recHeight, RAYWHITE);
+            DrawText("Model uzytkownika", (int)x0User, 150, 16, DARKGREEN);
+
+            DrawText(TextFormat("k=%.1f  m=%.2f  c=%.2f", k_user, m_user, c_user),
+                420, Consts::screenHeight - 40, 16, BLACK);
 
             EndDrawing();
         }

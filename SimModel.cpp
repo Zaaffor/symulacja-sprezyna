@@ -19,3 +19,11 @@ void SimModel::reset(float start_amp) {
 void SimModel::setMass(float new_m) {
 	m = new_m;
 }
+
+void SimModel::setSpringConstant(float new_k) {
+	k = new_k;
+}
+
+float SimModel::getSpringConstant() const {
+	return k;
+}

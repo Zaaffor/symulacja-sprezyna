@@ -13,10 +13,14 @@ public:
 	float getAmplitude() const { return amp; }
 	float getEquilibrium() const { return equi; }
 	float getDisplacement() const { return equi - amp; }
+	float getSpringConstant() const;
+	float getDamping() const { return damp; }
+	float getMass() const { return m; }
 
 	void setDamping(float c) { damp = c; }
 	void setMass(float new_m);
 	float getDamping() { return damp; }
+	void setSpringConstant(float new_k);
 
 private:
 	float acc;
