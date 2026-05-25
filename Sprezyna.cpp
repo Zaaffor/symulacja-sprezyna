@@ -1,5 +1,4 @@
 ﻿#include "raylib.h"
-#include "raygui.h"
 #include "Constants.h"
 #include "SimModel.h"
 #include "SimData.h"
@@ -28,6 +27,7 @@ int main() {
 
     SimState current = MENU;
 
+    //początkowe wartości
     float start_k = Consts::k;
     float start_m = Consts::m;
     float start_c = Consts::c;
@@ -48,11 +48,13 @@ int main() {
     float sim_Time = 0.0f;
     float accumulator = 0.0f;
 
+    //fixed bloczek
     const float k_ref = 500.0f;
     const float m_ref = 5.0f;
     const float c_ref = 0.5f;
     auto modelRef = SimModel(k_ref, m_ref, c_ref, Consts::screenHeight / 2.0f);
 
+    //bloczek użytkownika
     float k_user = 500.0f;
     float m_user = 5.0f;
     float c_user = 0.5f;
@@ -64,6 +66,7 @@ int main() {
     modelRef.reset(start_amp_ref);
     modelUser.reset(start_amp_user);
 
+    //osobny accumulator do duala
     float dual_accumulator = 0.0f;
 
     while (!WindowShouldClose()) {
@@ -74,6 +77,7 @@ int main() {
 
             Rectangle startBtn = { Consts::screenWidth / 2.0f - 100, 300, 200, 50 };
             if (GuiButton(startBtn, "Symulacja")) {
+                //resetowanie zmiennych przy uruchamianiu symulacji
                 damping = start_c;
                 m = start_m;
                 init_disp = start_offset;
@@ -82,6 +86,7 @@ int main() {
 
                 float start_amp = Consts::screenHeight / 2.0f - start_offset;
                 model.reset(start_amp);
+                model.resetX(40.0f);
                 data.clear();
                 sim_Time = 0.0f;
                 accumulator = 0.0f;
@@ -90,7 +95,7 @@ int main() {
             }
             Rectangle dualBtn = { Consts::screenWidth / 2.0f - 100, 400, 200, 50 };
             if (GuiButton(dualBtn, "Symulacja podwojna")) {
-                
+                //tworzenie dwóch modeli o tych samych parametrach -------------------! zmienić
                 modelRef = SimModel(k_ref, m_ref, c_ref, Consts::screenHeight / 2.0f);
                 modelUser = SimModel(k_user, m_user, c_user, Consts::screenHeight / 2.0f);
                 start_amp_ref = Consts::screenHeight / 2.0f - 40.0f;
@@ -112,7 +117,7 @@ int main() {
             ClearBackground(RAYWHITE);
             DrawText("Ustawienia", 200, 50, 40, DARKGRAY);
 
-            // Suwaki
+            //suwaki w ustawieniach
             GuiLabel(Rectangle{ 150, 120, 200, 20 }, "Stala sprezystosci k [N/m]");
             GuiSlider(Rectangle{ 150, 150, 300, 20 }, TextFormat("%.1f", k_min), TextFormat("%.1f", k_max),
                 &start_k, k_min, k_max);
@@ -145,6 +150,7 @@ int main() {
             accumulator += frame_t;
             model.setMass(m);
 
+            //accumulator symulacji podstawowej
             while (accumulator >= Consts::DT) {
                 model.setDamping(damping);
                 model.update(Consts::DT);
@@ -156,6 +162,7 @@ int main() {
             BeginDrawing();
             ClearBackground(GRAY);
 
+            //suwaki --------------! dodać stałą k
             GuiLabel(Rectangle{ 20, 20, 200, 20 }, "Wytlumienie c");
             GuiSlider(Rectangle{ 20, 45, 200, 20 }, TextFormat("%.2f", c_min), TextFormat("%.2f", 
                 c_max), &damping, c_min, c_max);
@@ -171,10 +178,11 @@ int main() {
 
             //rysowanie sprężyny i klocka
             float amp = model.getAmplitude();
-            float x_0 = Consts::screenWidth / 2.0f - Consts::recWidth / 2.0f;
-            float spring_X = x_0 + Consts::recWidth / 2.0f;
-            Renderer::drawSpring(spring_X, Consts::p_spring, amp, 8.0f);
-            Renderer::drawBox(x_0, amp, Consts::recWidth, Consts::recHeight, RAYWHITE);
+            float anchorX = Consts::screenWidth / 2.0f;   
+            float boxX = anchorX + model.getX();           
+
+            Renderer::drawSpring(anchorX, boxX, Consts::p_spring, amp, 8.0f);  // top fixed, bottom moves
+            Renderer::drawBox2D(boxX, amp, Consts::recWidth, Consts::recHeight, RAYWHITE);
 
             const auto& disp = data.getDisplacement();
             float center_Y = Consts::screenHeight / 2.0f + Consts::recHeight / 2.0f;
@@ -188,6 +196,7 @@ int main() {
             float frame_t = GetFrameTime();
             dual_accumulator += frame_t;
 
+            //dual accumulator
             while (dual_accumulator >= Consts::DT) {
                 modelRef.update(Consts::DT);
                 modelUser.setDamping(c_user);
@@ -200,9 +209,11 @@ int main() {
             BeginDrawing();
             ClearBackground(GRAY);
 
+            //box suwaków
             DrawRectangle(380, 0, 400, 150, LIGHTGRAY);
             GuiLabel(Rectangle{ 420, 10, 200, 20 }, "Parametry modelu uzytkownika");
 
+            //suwaki dual
             GuiLabel(Rectangle{ 420, 35, 150, 20 }, "k [N/m]");
             GuiSlider(Rectangle{ 420, 55, 300, 10 }, TextFormat("%.1f", k_min), TextFormat("%.1f", k_max),
                 &k_user, k_min, k_max);
@@ -223,6 +234,7 @@ int main() {
                 current = MENU;
             }
 
+            //dane do stałego bloczka
             float ampRef = modelRef.getAmplitude();
             float x0Ref = Consts::screenWidth / 4.0f - Consts::recWidth / 2.0f;
             float springXRef = x0Ref + Consts::recWidth / 2.0f;
@@ -230,11 +242,12 @@ int main() {
             Renderer::drawBox(x0Ref, ampRef, Consts::recWidth, Consts::recHeight, SKYBLUE);
             DrawText("Model referencyjny", (int)x0Ref, 150, 16, DARKBLUE);
 
+            //dane do bloczka użytkownika
             float ampUser = modelUser.getAmplitude();
             float x0User = 3 * Consts::screenWidth / 4.0f - Consts::recWidth / 2.0f;
             float springXUser = x0User + Consts::recWidth / 2.0f;
             Renderer::drawSpring(springXUser, Consts::p_spring, ampUser, 8.0f);
-            Renderer::drawBox(x0User, ampUser, Consts::recWidth, Consts::recHeight, RAYWHITE);
+            Renderer::drawBox(x0User, ampUser, Consts::recWidth, Consts::recHeight, DARKGREEN);
             DrawText("Model uzytkownika", (int)x0User, 150, 16, DARKGREEN);
 
             DrawText(TextFormat("k=%.1f  m=%.2f  c=%.2f", k_user, m_user, c_user),
@@ -258,8 +271,8 @@ int main() {
             analityczne.push_back(A * std::exp(-beta * t) * std::cos(wd * t + phi));
         }
 
-        Wykres(data.getTime(), analityczne, data.getDisplacement(),
-            "Czas [s]", "Wychylenie [cm]", "Wykres Wychylenia od czasu");
+       // Wykres(data.getTime(), analityczne, data.getDisplacement(),
+           // "Czas [s]", "Wychylenie [cm]", "Wykres Wychylenia od czasu");
     }
 
     return 0;

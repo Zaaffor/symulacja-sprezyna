@@ -2,23 +2,25 @@
 #include "raylib.h"
 #include <algorithm>
 
-void Renderer::drawSpring(float center_X, float f_Y, float m_Y, float width){
+void Renderer::drawSpring(float top_X, float bot_X, float f_Y, float m_Y, float width) {
     float topY = f_Y;
     float bottomY = m_Y;
-    if (topY > bottomY) std::swap(topY, bottomY); 
+    if (topY > bottomY) std::swap(topY, bottomY);
 
     float height = bottomY - topY;
-    const int segments = 24;               
+    const int segments = 24;
     float stepY = height / segments;
-    float amplitude = width * 0.5f;        
+    float amplitude = width * 0.5f;
 
-    float x1 = center_X;
+    float x1 = top_X;
     float y1 = topY;
     bool goRight = true;
 
     for (int i = 1; i <= segments; ++i) {
+        float t = (float)i / segments;                    
+        float centerX = top_X + (bot_X - top_X) * t;    
         float y2 = topY + i * stepY;
-        float x2 = center_X + (goRight ? amplitude : -amplitude);
+        float x2 = centerX + (goRight ? amplitude : -amplitude);
         DrawLine(x1, y1, x2, y2, BLACK);
         x1 = x2;
         y1 = y2;
@@ -26,7 +28,7 @@ void Renderer::drawSpring(float center_X, float f_Y, float m_Y, float width){
     }
 
     if (y1 != bottomY) {
-        DrawLine(x1, y1, center_X, bottomY, BLACK);
+        DrawLine(x1, y1, bot_X, bottomY, BLACK);
     }
 }
 
@@ -50,4 +52,9 @@ void Renderer::drawScatterPlot(const std::vector<float>& data, int x, int y, int
 			DrawCircle(static_cast<int>(px), static_cast<int>(py), 2, color);
 		}
 	}
+}
+
+void Renderer::drawBox2D(float centerX, float y, float w, float h, Color color) {
+    DrawRectangle(static_cast<int>(centerX - w / 2.0f), static_cast<int>(y),
+        static_cast<int>(w), static_cast<int>(h), color);
 }
