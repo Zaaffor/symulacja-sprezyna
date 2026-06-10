@@ -8,6 +8,7 @@ public:
 	void update(float dt);
 	void reset(float start_amp);
 	void resetX(float start_x);
+	void resetZ(float start_z);
 
 	float getAcceleration() const { return acc; }
 	float getVelocity() const { return vel; }
@@ -22,6 +23,10 @@ public:
 	float getVelX() const { return velX; }
 	float getAccX() const { return accX; }
 
+	float getZ() const { return z; }
+	float getVelZ() const { return velZ; }
+	float getAccZ() const { return accZ; }
+
 	void setDamping(float c) { damp = c; }
 	void setMass(float new_m);
 	float getDamping() { return damp; }
@@ -30,21 +35,17 @@ public:
 	void setSpringConstantX(float new_kx) { kx = new_kx; }
 	float getSpringConstantX() const { return kx; }
 
+	void setSpringConstantZ(float new_kz) { kz = new_kz; }
+	float getSpringConstantZ() const { return kz; }
+
 private:
-	float acc;
-	float vel;
-	float amp;
-	float equi;
-	float damp;
-	float k;
-	float m;
+	float acc, vel, amp, equi;
 
-	float accX;
-	float velX;
-	float x;
-	float equiX;
-	float kx;
+	float damp, k, m;
 
+	float accX, velX, x, equiX, kx;
+
+	float accZ, velZ, z, equiZ, kz;
 };
 
 #endif

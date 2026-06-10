@@ -11,6 +11,10 @@ public:
 	static void drawBox2D(float centerX, float y, float w, float h, Color color);
 	static void drawScatterPlot(const std::vector<float>& data, int x, int y, int w, int h,
 		float center_Y, int p_spacing, Color color);
+
+	static void drawSpring3D(Vector3 top, Vector3 bot, int seg, float r, Color color);
+	static void drawMass3D(Vector3 pos, float size, Color color);
+
 };
 
 #endif

@@ -3,8 +3,8 @@
 
 namespace Consts {
 	//RYSOWANIE
-	constexpr int screenWidth = 800;
-	constexpr int screenHeight = 600;
+	constexpr int screenWidth = 1200;
+	constexpr int screenHeight = 900;
 	constexpr float recWidth = 100.0f;
 	constexpr float recHeight = 50.0f;
 	constexpr float FPS = 24.0f;
@@ -23,9 +23,17 @@ namespace Consts {
 
 	//RYSOWANIE WYKRESU
 	constexpr float amp_off = 40.0f;
-	constexpr int plotWidth = screenWidth / 2;
+	constexpr int plotWidth = screenWidth / 4;
 	constexpr int plotHeight = 200;
 	constexpr int plotYoffset = 400;
+
+	//KAMERA 3D
+	constexpr float c3d_posX = 4.0f;
+	constexpr float c3d_posY = 12.0f;
+	constexpr float c3d_posZ = 18.0f;
+	constexpr float c3d_fovY = 45.0f;
+	constexpr float scale3d = 0.05f;
+	constexpr float c3d_anchorY = 5.0f;
 }
 
 #endif

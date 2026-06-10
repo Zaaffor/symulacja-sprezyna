@@ -15,4 +15,4 @@ void wykres_por(const float m, const float k, const float c);
 
 void Figure_holdon();
 
-#endif // !CHARTS_H
+#endif 

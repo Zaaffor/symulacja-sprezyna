@@ -58,3 +58,44 @@ void Renderer::drawBox2D(float centerX, float y, float w, float h, Color color) 
     DrawRectangle(static_cast<int>(centerX - w / 2.0f), static_cast<int>(y),
         static_cast<int>(w), static_cast<int>(h), color);
 }
+
+
+void Renderer::drawSpring3D(Vector3 top, Vector3 bot, int seg, float r, Color color) {
+    const float endFrac = 0.08f;
+
+    Vector3 springTop = {
+        top.x + (bot.x - top.x) * endFrac, top.y + (bot.y - top.y) * endFrac, top.z + (bot.z - top.z) * endFrac
+    };
+    Vector3 springBottom = {
+        top.x + (bot.x - top.x) * (1.0f - endFrac), top.y + (bot.y - top.y) * (1.0f - endFrac), top.z + (bot.z - top.z) * (1.0f - endFrac)
+    };
+
+    DrawLine3D(top, springTop, color);
+    DrawLine3D(springBottom, bot, color);
+
+    Vector3 prev = springTop;
+    bool    goRight = true;
+
+    for (int i = 1; i <= seg; ++i) {
+        float t = (float)i / (float)seg;
+        Vector3 centre = {
+            springTop.x + (springBottom.x - springTop.x) * t,
+            springTop.y + (springBottom.y - springTop.y) * t,
+            springTop.z + (springBottom.z - springTop.z) * t
+        };
+
+        Vector3 p = {
+            centre.x + (goRight ? r : -r), centre.y, centre.z
+        };
+        DrawLine3D(prev, p, color);
+        prev = p;
+        goRight = !goRight;
+    }
+    DrawLine3D(prev, springBottom, color);
+}
+
+void Renderer::drawMass3D(Vector3 pos, float size, Color color) {
+    DrawCube(pos, size, size, size, color);
+    DrawCubeWires(pos, size, size, size, BLACK);
+}
+
